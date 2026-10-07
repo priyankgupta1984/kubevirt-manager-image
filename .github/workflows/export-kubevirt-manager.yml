@@ -1,1 +1,45 @@
+name: Export KubeVirt Manager Image
 
+on:
+  workflow_dispatch:
+
+jobs:
+  export-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pull official KubeVirt Manager image
+        run: |
+          docker pull docker.io/kubevirtmanager/kubevirt-manager:1.5.4
+
+      - name: Show image digest
+        run: |
+          docker image inspect \
+            docker.io/kubevirtmanager/kubevirt-manager:1.5.4 \
+            --format '{{json .RepoDigests}}'
+
+      - name: Export image to tar
+        run: |
+          docker save \
+            -o kubevirt-manager-1.5.4.tar \
+            docker.io/kubevirtmanager/kubevirt-manager:1.5.4
+
+      - name: Generate SHA256 checksum
+        run: |
+          sha256sum kubevirt-manager-1.5.4.tar \
+            > kubevirt-manager-1.5.4.tar.sha256
+
+      - name: Show files
+        run: |
+          ls -lh kubevirt-manager-1.5.4.tar*
+          cat kubevirt-manager-1.5.4.tar.sha256
+
+      - name: Upload image archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubevirt-manager-1.5.4
+          path: |
+            kubevirt-manager-1.5.4.tar
+            kubevirt-manager-1.5.4.tar.sha256
+          compression-level: 0
+          retention-days: 3
